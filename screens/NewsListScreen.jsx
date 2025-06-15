@@ -1,7 +1,10 @@
-import React, { useState, useEffect, use } from 'react';
-import { View, Text, FlatList, StyleSheet, TextInput, Button, ActivityIndicator, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback} from 'react';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, TextInput } from 'react-native';
 import { fetchNews } from '../api/News';
-import { format, parseISO } from 'date-fns'; 
+import { format, parseISO } from 'date-fns';
+import * as WebBrowser from 'expo-web-browser';
+import { Ionicons } from '@expo/vector-icons'; 
+
 
 const FILTERS = [
   {key:'today', label:'Today'},
@@ -15,15 +18,16 @@ const NewsListScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('Programming');
-  const [tempQuery, setTempQuery] = useState('React Native');
-  const [dateFilter, setDateFilter] = useState('anytime');
+  const [tempQuery, setTempQuery] = useState('Programming');
+  const [activeFilter, setActiveFilter] = useState('anytime');
+  const [previousState, setPreviousState] = useState(null);
 
   useEffect(() => {
     const getNews = async () => {
       try {
         setLoading(true);
         setError(null);
-        const newsArticles = await fetchNews(searchQuery);
+        const newsArticles = await fetchNews(tempQuery, activeFilter);
         setArticles(newsArticles);
       } catch (e) {
         setError('Unable to load news.');
@@ -33,30 +37,46 @@ const NewsListScreen = ({ navigation }) => {
     };
 
     getNews();
-  },  [tempQuery, dateFilter]);
+  },  [tempQuery, activeFilter]);
+
+  const handleGoBack = useCallback(() => {
+    if (previousState) {
+      setTempQuery(previousState.query);
+      setSearchQuery(previousState.query);
+      setActiveFilter(previousState.filter);
+      setPreviousState(null);
+    }
+  }, [previousState]);
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerLeft: () => (
+        previousState ? (
+          <TouchableOpacity onPress={handleGoBack} style={{ marginLeft: 15 }}>
+            <Ionicons name="arrow-back" size={24} color="white" />
+          </TouchableOpacity>
+        ) : null
+      ),
+    });
+  }, [navigation, previousState, handleGoBack]);
+
 
   const handleSearch = () => {
+    if (searchQuery.trim() === tempQuery.trim()) return;
+    setPreviousState({ query: tempQuery, filter: activeFilter });
     setTempQuery(searchQuery);
   };
 
-  if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" style={styles.centered} />;
-  }
+  const handleFilterPress = (filterKey) => {
+    if (filterKey === activeFilter) return;
+    setPreviousState({ query: tempQuery, filter: activeFilter });
+    setActiveFilter(filterKey);
+  };
 
-  if (error) {
-    return <Text style={styles.centered}>{error}</Text>;
-  }
+  const handleArticlePress = async (url) => {
+    await WebBrowser.openBrowserAsync(url);
+  };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => navigation.navigate('NewsDetail', { article: item })}
-    >
-      <Text style={styles.title}>{item.date}</Text>
-      <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.source}>{item.source.name}</Text>
-    </TouchableOpacity>
-  );
 
   return (
     <View style={styles.container}>
@@ -64,29 +84,24 @@ const NewsListScreen = ({ navigation }) => {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="search by topic (ex. sports, tech)"
+          placeholder="search for news..."
           value={searchQuery}
           onChangeText={setSearchQuery}
+          onSubmitEditing={handleSearch}
         />
-        <Button title="Search" onPress={handleSearch} color="#4682B4" />
+        <TouchableOpacity onPress={handleSearch} style={styles.searchButton}>
+          <Text style={styles.searchButtonText}>Search</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.filterContainer}>
         {FILTERS.map((filter) => (
           <TouchableOpacity
             key={filter.key}
-            style={[
-              styles.filterButton,
-              dateFilter === filter.key && styles.dateFilterButton, // Apply active style
-            ]}
-            onPress={() => setDateFilter(filter.key)}
+            style={[styles.filterButton, activeFilter === filter.key && styles.activeFilterButton]}
+            onPress={() => handleFilterPress(filter.key)}
           >
-            <Text
-              style={[
-                styles.filterButtonText,
-                dateFilter === filter.key && styles.dateFilterButtonText,
-              ]}
-            >
+            <Text style={[styles.filterButtonText, activeFilter === filter.key && styles.activeFilterButtonText,]}>
               {filter.label}
             </Text>
           </TouchableOpacity>
@@ -101,14 +116,14 @@ const NewsListScreen = ({ navigation }) => {
 
         <FlatList
           data={articles}
-          keyExtractor={(item) => item.url}
+          keyExtractor={(item, index) => item.url + index}
           renderItem={({ item }) => {
             const formattedDate = item.publishedAt 
               ? format(parseISO(item.publishedAt), 'dd/MM/yyyy') 
               : '';
 
             return(
-            <TouchableOpacity onPress={() => navigation.navigate('NewsDetail', { article: item })}>
+              <TouchableOpacity onPress={() => handleArticlePress(item.url)}>
               <View style={styles.articleContainer}>
                 <Text style={styles.articleTitle}>{item.title}</Text>
                 <View style={styles.detailsContainer}>
@@ -125,33 +140,66 @@ const NewsListScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 10 },
-  searchContainer: { flexDirection: 'row', marginBottom: 10 },
-  searchInput: { flex: 1, borderWidth: 1, borderColor: '#ccc', padding: 8, marginRight: 8, borderRadius: 5 },
+  container: {
+    flex: 1, 
+    padding: 10,
+    marginTop: 10 
+  },
+  searchContainer: { 
+    flexDirection: 'row', 
+    marginBottom: 10,
+    marginLeft: 8,
+    marginRight: 8 
+  },
+  searchInput: { 
+    flex: 1, 
+    borderWidth: 1, 
+    borderColor: '#ccc', 
+    padding: 8, 
+    marginRight: 8,
+    borderRadius: 13 
+  },
+  searchButton: {
+    backgroundColor: '#535b5d',
+    paddingVertical: 12,       
+    paddingHorizontal: 15,     
+    borderRadius: 13,          
+    alignItems: 'center',      
+    justifyContent: 'center',  
+  },
+  searchButtonText: {
+    color: '#ffffff',      
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
   filterContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 15,
+    marginLeft: 5,
+    marginRight: 5 
   },
   filterButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: 20,
+    borderRadius: 13,
     backgroundColor: '#e0e0e0',
   },
-  dateFilterButton: {
-    backgroundColor: '#007BFF',
+  activeFilterButton: {
+    backgroundColor: '#a2d18b',
   },
   filterButtonText: {
     color: '#333',
   },
-  dateFilterButtonText: {
+  activeFilterButtonText: {
     color: '#FFFFFF', 
   },
   articleContainer: { 
+    borderColor: '#676f71',
     padding: 10, 
-    borderBottomWidth: 1, 
-    borderBottomColor: '#eee'
+    borderWidth: 1, 
+    borderRadius: 13,
+    marginBottom: 10
   },
   articleTitle: { 
     fontSize: 16, 
@@ -161,6 +209,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between', 
     alignItems: 'center',
+    marginTop: 4
   },
   sourceText: {
     fontSize: 12,
@@ -169,7 +218,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 12,
-    color: '#888', 
+    color: '#555', 
     marginLeft: 10,
   },
   errorText: {

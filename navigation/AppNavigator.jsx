@@ -1,32 +1,60 @@
-// navigation/AppNavigator.js
-import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import NewsListScreen from '../screens/NewsListScreen';
-import NewsDetailScreen from '../screens/NewsDetailScreen';
+// import NewsDetailScreen from '../screens/NewsDetailScreen';
 
 const Stack = createStackNavigator();
 
-const AppNavigator = () => {
+function AppNavigator() {
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: '#4682B4' },
-        headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
-      }}
-    >
+    <Stack.Navigator>
       <Stack.Screen 
-        name="NewsList" 
+        name="Isearch Newston"
         component={NewsListScreen} 
-        options={{ title: 'I search Newston' }}
-      />
-      <Stack.Screen 
-        name="NewsDetail" 
-        component={NewsDetailScreen} 
-        options={{ title: 'Info.' }}
+        options={{
+          headerTitleAlign: 'center',
+          headerStyle: { 
+            backgroundColor: '#a2d4ab', 
+            height: 110, 
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: { fontWeight: 'bold', fontSize: 25 },
+        }}
       />
     </Stack.Navigator>
   );
-};
+}
 
 export default AppNavigator;
+
+
+
+
+
+
+
+// const AppNavigator = () => {
+//   return (
+//     <Stack.Navigator
+//       screenOptions={{
+//         headerStyle: { backgroundColor: '#a2d18b', marginButtom: 10},
+//         headerTintColor: '#fff',
+//         headerTitleStyle: { fontWeight: 'bold', fontSize: 30},
+//         headerTitleAlign: 'center'
+        
+//       }}
+//     >
+//       <Stack.Screen 
+//         name="NewsList" 
+//         component={NewsListScreen} 
+//         options={{ title: 'Isearch Newston' }}
+//       />
+//       {/* <Stack.Screen 
+//         name="NewsDetail" 
+//         component={NewsDetailScreen} 
+//         options={{ title: 'Info.' }}
+//       /> */}
+//     </Stack.Navigator>
+//   );
+// };
+
+// export default AppNavigator;
