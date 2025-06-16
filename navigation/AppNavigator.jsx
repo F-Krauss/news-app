@@ -25,36 +25,3 @@ function AppNavigator() {
 }
 
 export default AppNavigator;
-
-
-
-
-
-
-
-// const AppNavigator = () => {
-//   return (
-//     <Stack.Navigator
-//       screenOptions={{
-//         headerStyle: { backgroundColor: '#a2d18b', marginButtom: 10},
-//         headerTintColor: '#fff',
-//         headerTitleStyle: { fontWeight: 'bold', fontSize: 30},
-//         headerTitleAlign: 'center'
-        
-//       }}
-//     >
-//       <Stack.Screen 
-//         name="NewsList" 
-//         component={NewsListScreen} 
-//         options={{ title: 'Isearch Newston' }}
-//       />
-//       {/* <Stack.Screen 
-//         name="NewsDetail" 
-//         component={NewsDetailScreen} 
-//         options={{ title: 'Info.' }}
-//       /> */}
-//     </Stack.Navigator>
-//   );
-// };
-
-// export default AppNavigator;
