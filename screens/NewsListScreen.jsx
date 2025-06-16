@@ -22,22 +22,50 @@ const NewsListScreen = ({ navigation }) => {
   const [activeFilter, setActiveFilter] = useState('anytime');
   const [previousState, setPreviousState] = useState(null);
 
+  
   useEffect(() => {
     const getNews = async () => {
+
+      console.log(`Fetching news for query: '${tempQuery}' and filter: '${activeFilter}'`);
       try {
         setLoading(true);
         setError(null);
+
         const newsArticles = await fetchNews(tempQuery, activeFilter);
+
+        console.log(`API returned ${newsArticles.length} articles.`);
         setArticles(newsArticles);
-      } catch (e) {
-        setError('Unable to load news.');
+      } catch (err) {
+        console.error("Error fetching news in component:", err);
+        setError(err.message || "Failed to fetch news.");
       } finally {
         setLoading(false);
       }
     };
 
-    getNews();
-  },  [tempQuery, activeFilter]);
+    if (searchQuery) {
+        getNews();
+    }
+    
+  }, [tempQuery, activeFilter]);
+
+
+  // useEffect(() => {
+  //   const getNews = async () => {
+  //     try {
+  //       setLoading(true);
+  //       setError(null);
+  //       const newsArticles = await fetchNews(tempQuery, activeFilter);
+  //       setArticles(newsArticles);
+  //     } catch (e) {
+  //       setError('Unable to load news.');
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   getNews();
+  // },  [tempQuery, activeFilter]);
 
   const handleGoBack = useCallback(() => {
     if (previousState) {
